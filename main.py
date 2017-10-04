@@ -3,6 +3,7 @@ import os
 import time
 import re
 import traceback
+import json
 
 TITLE_LINK  = "title_link"
 REACTION    = "reaction"
@@ -108,12 +109,24 @@ def get_message(msg_ts, channel):
 def get_message_listeners(key, channel):
 	return (LISTENERS.get(key) or []) if key else []
 
+def read_in_listeners():
+	if os.path.isfile('listeners.json'):
+		listeners = open('listeners.json', 'r').read()
+		global LISTENERS
+		LISTENERS = json.loads(listeners)
+		print "LISTENERS : %s" % (LISTENERS)
+
+def write_message_listeners():
+	listeners = json.dumps(LISTENERS)
+	target = open('listeners.json', 'w')
+	target.write(listeners)
 
 def add_message_listener(key, listener):
 	if LISTENERS.get(key) is None:
 		LISTENERS[key] = []
 	LISTENERS[key].extend([listener])
 	print "Adding Listener for key %s : %s" % (key, listener)
+	write_message_listeners()
 
 def remove_message_listener(key, user):
 	listeners = LISTENERS.get(key) or []
@@ -121,6 +134,7 @@ def remove_message_listener(key, user):
 	listeners = [x for x in listeners if x[LISTENER_USER] != user]
 	LISTENERS[key] = listeners
 	print "Removing %s Listener(s) for key %s : %s" % (size - len(listeners), key, user)
+	write_message_listeners()
 
 def handle_reaction_message(msg, user, channel):
 	if msg.get(REACTION) == REACTION_EYES and user:
@@ -176,6 +190,7 @@ def process_message(msg):
 			post_message_to_channel(channel, msg)
 
 if __name__ == "__main__":
+	read_in_listeners()
 	num_errors = 0
 	while num_errors < 10:
 		slack_rtm_client = SlackClient(os.environ["SLACK_RTM_TOKEN"])
