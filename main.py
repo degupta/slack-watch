@@ -149,18 +149,25 @@ def remove_message_listener(key, user):
 	print "Removing %s Listener(s) for key %s : %s" % (size - len(listeners), key, user)
 	write_message_listeners()
 
-def handle_reaction_message(msg, user, channel):
-	if msg.get(REACTION) == REACTION_EYES and user:
-		orig_msg_key = get_message_key(get_message(msg[ITEM][TIMESTAMP], channel))
+def handle_reaction_message(msg, user_id, channel):
+	if msg.get(REACTION) == REACTION_EYES and user_id:
+		orig_msg_ts = msg[ITEM][TIMESTAMP]
+		orig_msg_key = get_message_key(get_message(orig_msg_ts, channel))
 
 		if orig_msg_key is None:
-			print ("Could not get original message for reaction : %s" % (msg[ITEM][TIMESTAMP]))
+			print ("Could not get original message for reaction : %s") % (orig_msg_ts)
 			return
 
+		channel = msg[ITEM][CHANNEL]
+		message_prefix = "watching"
 		if msg[TYPE] == REACTION_ADDED:
-			add_message_listener(orig_msg_key, {LISTENER_USER: user, LISTENER_CHANNEL: msg[ITEM][CHANNEL]})
+			add_message_listener(orig_msg_key, {LISTENER_USER: user_id, LISTENER_CHANNEL: channel})
 		elif msg[TYPE] == REACTION_REMOVED:
-			remove_message_listener(orig_msg_key, user)
+			message_prefix = "stopped watching"
+			remove_message_listener(orig_msg_key, user_id)
+
+		user = get_user(user_id) or {}
+		post_message_thread_to_channel(channel, orig_msg_ts, "Okay %s <@%s|%s> " % (message_prefix, user_id, user.get('display_name') or  user_id))
 
 
 def process_message(msg):
