@@ -145,7 +145,10 @@ def remove_message_listener(key, user):
 	listeners = LISTENERS.get(key) or []
 	size = len(listeners)
 	listeners = [x for x in listeners if x[LISTENER_USER] != user]
-	LISTENERS[key] = listeners
+	if len(listeners) == 0 and LISTENERS.get(key):
+		del LISTENERS[key]
+	else:
+		LISTENERS[key] = listeners
 	print "Removing %s Listener(s) for key %s : %s" % (size - len(listeners), key, user)
 	write_message_listeners()
 
