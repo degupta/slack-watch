@@ -68,6 +68,19 @@ def post_message_to_channel(channel, message):
 		print "Error calling slack API %s" % (e)
 		traceback.print_exc()
 
+def post_message_thread_to_channel(channel, msg_ts, thread_message):
+	try:
+		print ("Sending to channel %s : %s") % (channel, thread_message)
+		slack_api_client.api_call(
+			"chat.postMessage",
+			channel=channel,
+			text=thread_message,
+			thread_ts=msg_ts
+		)
+	except Exception as e:
+		print "Error calling slack API %s" % (e)
+		traceback.print_exc()
+
 def get_user(user_id):
 	if USER_CACHE.get(user_id) is None:
 		u = call_slack_for_user(user_id)
@@ -187,7 +200,7 @@ def process_message(msg):
 				user = get_user(user_id)
 				if user:
 					msg = msg + " <@" + user_id + "|" + user['display_name'] + ">"
-			post_message_to_channel(channel, msg)
+			post_message_thread_to_channel(channel, msg_ts, msg)
 
 if __name__ == "__main__":
 	read_in_listeners()
