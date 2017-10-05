@@ -177,7 +177,7 @@ def handle_reaction_message(msg, user_id, channel):
 
 def process_message(msg):
 	msg_type = msg.get(TYPE)
-	if msg_type in ('presence_change', 'reconnect_url', 'hello'):
+	if msg_type in ('presence_change', 'user_typing', 'user_change', 'reconnect_url', 'hello', 'channel_created', 'bot_added', 'apps_changed'):
 		return
 
 	if msg.get('bot_id') == MY_BOT_ID:
