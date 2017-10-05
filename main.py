@@ -13,10 +13,12 @@ CHANNEL     = "channel"
 TYPE        = "type"
 ATTACHMENTS = "attachments"
 MESSAGE     = "message"
+TEXT        = "text"
 
 REACTION_EYES    = "eyes"
 REACTION_ADDED   = "reaction_added"
 REACTION_REMOVED = "reaction_removed"
+DISPLAY_NAME     = "display_name"
 
 LISTENER_USER    = "user"
 LISTENER_CHANNEL = "channel"
@@ -27,7 +29,7 @@ LISTENERS    = {}
 MSG_CACHE    = {}
 USER_CACHE   = {}
 
-MY_BOT_ID = 'B78KJFP54'
+MY_BOT_ID = "B78KJFP54"
 
 slack_api_client = SlackClient(os.environ["SLACK_API_TOKEN"])
 
@@ -105,8 +107,8 @@ def get_message_key(msg):
 				key = check_for_bitbucket_pr(attachment[TITLE_LINK])
 				if key: return key
 
-	if msg.get('text'):
-		key = check_for_bitbucket_pr(msg['text'])
+	if msg.get(TEXT):
+		key = check_for_bitbucket_pr(msg[TEXT])
 		if key: return key
 
 	return None
@@ -170,7 +172,7 @@ def handle_reaction_message(msg, user_id, channel):
 			remove_message_listener(orig_msg_key, user_id)
 
 		user = get_user(user_id) or {}
-		post_message_thread_to_channel(channel, orig_msg_ts, "Okay %s <@%s|%s> " % (message_prefix, user_id, user.get('display_name') or  user_id))
+		post_message_thread_to_channel(channel, orig_msg_ts, "Okay %s <@%s|%s> " % (message_prefix, user_id, user.get(DISPLAY_NAME) or  user_id))
 
 
 def process_message(msg):
@@ -195,22 +197,30 @@ def process_message(msg):
 	if channel is None and msg.get(ITEM):
 		channel = msg[ITEM].get(LISTENER_CHANNEL)
 
-	if channel is None or user is None:
-		print ("Got a message without channel or user : %s") % (msg)
+	if channel is None:
+		print ("Got a message without channel : %s") % (msg)
 		return
 
 	if msg.get(REACTION):
-		handle_reaction_message(msg, user, channel)
+		if user:
+			handle_reaction_message(msg, user, channel)
+		else:
+			print ("Got a message without user : %s") % (msg)
 	else:
+		print msg
 		listeners = get_message_listeners(key, channel)
 		if listeners:
-			msg = "Ping"
+			post_msg = "Ping"
+			text = msg[ATTACHMENTS][0].get(TEXT) if msg.get(ATTACHMENTS) and len(msg[ATTACHMENTS]) > 0 else ""
+			text = msg.get(TEXT) if (text is None or text == "") else text
+
 			for listener in listeners:
 				user_id = listener[LISTENER_USER]
 				user = get_user(user_id)
 				if user:
-					msg = msg + " <@" + user_id + "|" + user['display_name'] + ">"
-			post_message_thread_to_channel(channel, msg_ts, msg)
+					post_msg = post_msg + " <@" + user_id + "|" + user[DISPLAY_NAME] + ">"
+			post_msg = post_msg + (" " + (text or ""))
+			post_message_thread_to_channel(channel, msg_ts, post_msg)
 
 if __name__ == "__main__":
 	read_in_listeners()
