@@ -207,7 +207,6 @@ def process_message(msg):
 		else:
 			print ("Got a message without user : %s") % (msg)
 	else:
-		print msg
 		listeners = get_message_listeners(key, channel)
 		if listeners:
 			post_msg = "Ping"
